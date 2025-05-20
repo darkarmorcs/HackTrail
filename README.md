@@ -33,6 +33,7 @@ A comprehensive security testing application with subdomain enumeration, paramet
 
 - Node.js (v16 or higher)
 - npm (v7 or higher)
+- PostgreSQL or MySQL database (optional, for persistent storage)
 
 ### Installation
 
@@ -47,12 +48,37 @@ A comprehensive security testing application with subdomain enumeration, paramet
    npm install
    ```
 
-3. Start the development server:
+3. Configure database (optional):
+
+   **PostgreSQL**:
+   ```
+   # Create a new PostgreSQL database
+   createdb bug_bounty_tool
+   
+   # Set environment variables in .env file
+   DATABASE_URL=postgresql://username:password@localhost:5432/bug_bounty_tool
+   ```
+
+   **MySQL**:
+   ```
+   # Create a new MySQL database
+   mysql -u root -p -e "CREATE DATABASE bug_bounty_tool;"
+   
+   # Set environment variables in .env file
+   DATABASE_URL=mysql://username:password@localhost:3306/bug_bounty_tool
+   ```
+
+4. Initialize the database (if using database storage):
+   ```
+   npm run db:push
+   ```
+
+5. Start the development server:
    ```
    npm run dev
    ```
 
-4. Access the application at:
+6. Access the application at:
    ```
    http://localhost:5000
    ```

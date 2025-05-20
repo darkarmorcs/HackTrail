@@ -202,6 +202,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ error: "Failed to fetch wordlists" });
     }
   });
+  
+  // Port scanning endpoint
+  app.post("/api/tools/port-scanner", async (req: Request, res: Response) => {
+    try {
+      const { 
+        target, 
+        portRange = "1-1000", 
+        scanSpeed = 3, 
+        scanVersion = false,
+        scanSpecificPorts = false,
+        specificPorts = "",
+        commonPortsOnly = true
+      } = req.body;
+      
+      if (!target) {
+        return res.status(400).json({ error: "Target is required" });
+      }
+      
+      // Validate target format
+      const ipRegex = /^([0-9]{1,3}\.){3}[0-9]{1,3}$/;
+      const domainRegex = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+      
+      if (!ipRegex.test(target) && !domainRegex.test(target)) {
+        return res.status(400).json({ error: "Invalid target format. Must be a valid IP address or domain name." });
+      }
+      
+      // Simulate port scanning
+      const ports = await simulatePortScan(
+        target, 
+        portRange, 
+        scanSpeed, 
+        scanVersion,
+        scanSpecificPorts,
+        specificPorts,
+        commonPortsOnly
+      );
+      
+      return res.json({ ports });
+    } catch (error) {
+      console.error("Port scanning error:", error);
+      return res.status(500).json({ error: "Failed to perform port scan" });
+    }
+  });
+  
+  // Technology detection endpoint
+  app.post("/api/tools/tech-detector", async (req: Request, res: Response) => {
+    try {
+      const { url } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: "URL is required" });
+      }
+      
+      // Validate URL format
+      try {
+        new URL(url);
+      } catch (e) {
+        return res.status(400).json({ error: "Invalid URL format" });
+      }
+      
+      // Simulate technology detection
+      const technologies = await simulateTechDetection(url);
+      
+      return res.json({ technologies });
+    } catch (error) {
+      console.error("Technology detection error:", error);
+      return res.status(500).json({ error: "Failed to detect technologies" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
@@ -695,4 +764,394 @@ function shuffle<T>(array: T[]): T[] {
 // Helper function to choose a random item from an array
 function randomChoice<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
+}
+
+// Function to simulate port scanning (for demonstration purposes)
+async function simulatePortScan(
+  target: string,
+  portRange: string,
+  scanSpeed: number,
+  scanVersion: boolean,
+  scanSpecificPorts: boolean,
+  specificPorts: string,
+  commonPortsOnly: boolean
+): Promise<{ port: number, state: "open" | "closed" | "filtered", service?: string, banner?: string }[]> {
+  // Simulate processing time based on scan parameters
+  const delayBase = 6 - scanSpeed; // Higher speed = less delay
+  const scanDelay = delayBase * 500;
+  await new Promise(resolve => setTimeout(resolve, scanDelay));
+  
+  // Common service mappings
+  const serviceMap: Record<number, string> = {
+    21: "ftp",
+    22: "ssh",
+    23: "telnet",
+    25: "smtp",
+    53: "dns",
+    80: "http",
+    110: "pop3",
+    143: "imap",
+    443: "https",
+    445: "smb",
+    3306: "mysql",
+    3389: "rdp",
+    5432: "postgresql",
+    8080: "http-proxy",
+    8443: "https-alt"
+  };
+  
+  // Map of common banners for services
+  const bannerMap: Record<string, string[]> = {
+    "ssh": [
+      "SSH-2.0-OpenSSH_8.4p1",
+      "SSH-2.0-OpenSSH_7.9p1 Debian-10+deb10u2",
+      "SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.5"
+    ],
+    "http": [
+      "Apache/2.4.41 (Ubuntu)",
+      "nginx/1.18.0 (Ubuntu)",
+      "Microsoft-IIS/10.0"
+    ],
+    "https": [
+      "Apache/2.4.41 (Ubuntu)",
+      "nginx/1.18.0 (Ubuntu)",
+      "cloudflare"
+    ],
+    "ftp": [
+      "220 ProFTPD 1.3.6 Server",
+      "220 vsFTPd 3.0.3",
+      "220 FileZilla Server"
+    ],
+    "smtp": [
+      "220 mail.example.com ESMTP Postfix",
+      "220 mail.example.com ESMTP Exim 4.94.2",
+      "220 Exchange ESMTP Server ready"
+    ],
+    "mysql": [
+      "5.7.33-0ubuntu0.18.04.1",
+      "8.0.27-0ubuntu0.20.04.1",
+      "MariaDB 10.3.31-0ubuntu0.20.04.1"
+    ]
+  };
+  
+  // Define ports to scan
+  let portsToScan: number[] = [];
+  
+  if (commonPortsOnly) {
+    // Common ports used by services
+    portsToScan = [
+      20, 21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 
+      1723, 3306, 3389, 5900, 8080, 8443
+    ];
+  } else if (scanSpecificPorts && specificPorts) {
+    // Parse specific ports (e.g. "22, 80, 443, 8080")
+    portsToScan = specificPorts.split(',')
+      .map(p => parseInt(p.trim()))
+      .filter(p => !isNaN(p) && p > 0 && p < 65536);
+  } else {
+    // Parse port range (e.g. "1-1000")
+    const ranges = portRange.split(',');
+    for (const range of ranges) {
+      const trimmedRange = range.trim();
+      if (trimmedRange.includes('-')) {
+        const [start, end] = trimmedRange.split('-').map(Number);
+        if (!isNaN(start) && !isNaN(end) && start > 0 && end < 65536) {
+          // For safety in the simulation, limit the port range size
+          const safeEnd = Math.min(end, start + 100);
+          for (let i = start; i <= safeEnd; i++) {
+            portsToScan.push(i);
+          }
+        }
+      } else {
+        const port = parseInt(trimmedRange);
+        if (!isNaN(port) && port > 0 && port < 65536) {
+          portsToScan.push(port);
+        }
+      }
+    }
+  }
+  
+  // Determine how many ports are open (normally 10-15% of ports might be open)
+  // For the simulation, we'll return a manageable subset
+  const totalResults = Math.min(portsToScan.length, 30);
+  const openPorts = Math.floor(totalResults * 0.3); // 30% of results are open
+  
+  // Create results array
+  let results: { port: number, state: "open" | "closed" | "filtered", service?: string, banner?: string }[] = [];
+  
+  // Shuffle ports to get a random selection
+  const shuffledPorts = shuffle(portsToScan);
+  
+  // Generate open port results
+  for (let i = 0; i < openPorts; i++) {
+    if (i >= shuffledPorts.length) break;
+    
+    const port = shuffledPorts[i];
+    const service = serviceMap[port] || (Math.random() > 0.7 ? "unknown" : undefined);
+    
+    let banner: string | undefined;
+    if (scanVersion && service && bannerMap[service]) {
+      banner = randomChoice(bannerMap[service]);
+    }
+    
+    results.push({
+      port,
+      state: "open",
+      service,
+      banner
+    });
+  }
+  
+  // Generate some filtered and closed ports for realism
+  const filteredPorts = Math.floor((totalResults - openPorts) * 0.4);
+  for (let i = openPorts; i < openPorts + filteredPorts; i++) {
+    if (i >= shuffledPorts.length) break;
+    
+    results.push({
+      port: shuffledPorts[i],
+      state: "filtered"
+    });
+  }
+  
+  for (let i = openPorts + filteredPorts; i < totalResults; i++) {
+    if (i >= shuffledPorts.length) break;
+    
+    results.push({
+      port: shuffledPorts[i],
+      state: "closed"
+    });
+  }
+  
+  // Sort results by port number
+  results.sort((a, b) => a.port - b.port);
+  
+  return results;
+}
+
+// Function to simulate technology detection (for demonstration purposes)
+async function simulateTechDetection(
+  url: string
+): Promise<{ name: string, category: string, version?: string, confidence: number, icon?: string }[]> {
+  // Simulate processing time
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  // Parse the URL to determine what kind of technologies might be used
+  const urlObj = new URL(url);
+  const hostname = urlObj.hostname;
+  
+  // Common technology categories
+  const categories = [
+    "Web Servers",
+    "Programming Languages",
+    "JavaScript Frameworks",
+    "CMS",
+    "Analytics",
+    "Operating Systems",
+    "Caching",
+    "Reverse Proxies",
+    "Security",
+    "JavaScript Libraries",
+    "Web Frameworks",
+    "Databases",
+    "Payment Processors",
+    "CI/CD",
+    "Hosting"
+  ];
+  
+  // Common technologies by category
+  const techByCategory: Record<string, { name: string, versions: string[] }[]> = {
+    "Web Servers": [
+      { name: "Apache", versions: ["2.4.41", "2.4.38", "2.4.29"] },
+      { name: "Nginx", versions: ["1.18.0", "1.14.0", "1.17.1"] },
+      { name: "Microsoft IIS", versions: ["10.0", "8.5", "7.5"] },
+      { name: "LiteSpeed", versions: ["5.4.1", "5.3", "4.5.2"] }
+    ],
+    "Programming Languages": [
+      { name: "PHP", versions: ["7.4.3", "8.0.0", "5.6.40"] },
+      { name: "Node.js", versions: ["14.15.0", "16.3.0", "12.18.3"] },
+      { name: "Python", versions: ["3.9.5", "3.8.10", "3.7.11"] },
+      { name: "Ruby", versions: ["3.0.0", "2.7.2", "2.6.6"] }
+    ],
+    "JavaScript Frameworks": [
+      { name: "React", versions: ["17.0.2", "16.13.1", "18.0.0"] },
+      { name: "Angular", versions: ["12.0.0", "11.2.14", "13.0.0"] },
+      { name: "Vue.js", versions: ["3.0.0", "2.6.12", "3.2.1"] },
+      { name: "Svelte", versions: ["3.44.0", "3.38.2", "3.24.0"] }
+    ],
+    "CMS": [
+      { name: "WordPress", versions: ["5.8.1", "5.7.2", "5.9.0"] },
+      { name: "Drupal", versions: ["9.2.6", "8.9.19", "7.84"] },
+      { name: "Joomla", versions: ["4.0.3", "3.10.0", "3.9.28"] },
+      { name: "Magento", versions: ["2.4.3", "2.3.7", "2.4.0"] }
+    ],
+    "Analytics": [
+      { name: "Google Analytics", versions: ["GA4", "Universal Analytics"] },
+      { name: "Matomo", versions: ["4.6.2", "4.5.0", "4.0.0"] },
+      { name: "HotJar", versions: [] },
+      { name: "Mixpanel", versions: [] }
+    ],
+    "Operating Systems": [
+      { name: "Ubuntu", versions: ["20.04", "18.04", "22.04"] },
+      { name: "CentOS", versions: ["8", "7", "6"] },
+      { name: "Windows Server", versions: ["2019", "2016", "2012 R2"] },
+      { name: "Debian", versions: ["11", "10", "9"] }
+    ],
+    "Caching": [
+      { name: "Redis", versions: ["6.2.5", "6.0.9", "5.0.7"] },
+      { name: "Varnish", versions: ["6.6", "6.0", "4.1"] },
+      { name: "Memcached", versions: ["1.6.9", "1.5.22", "1.4.25"] }
+    ],
+    "Reverse Proxies": [
+      { name: "Cloudflare", versions: [] },
+      { name: "Nginx", versions: ["1.18.0", "1.14.0", "1.17.1"] },
+      { name: "HAProxy", versions: ["2.4.0", "2.2.14", "2.0.0"] }
+    ],
+    "Security": [
+      { name: "ModSecurity", versions: ["3.0.4", "2.9.3"] },
+      { name: "Let's Encrypt", versions: [] },
+      { name: "Sucuri", versions: [] },
+      { name: "Cloudflare WAF", versions: [] }
+    ],
+    "JavaScript Libraries": [
+      { name: "jQuery", versions: ["3.6.0", "3.5.1", "2.2.4", "1.12.4"] },
+      { name: "Lodash", versions: ["4.17.21", "4.17.20", "4.17.15"] },
+      { name: "Moment.js", versions: ["2.29.1", "2.29.0", "2.24.0"] },
+      { name: "D3.js", versions: ["7.0.0", "6.7.0", "5.16.0"] }
+    ],
+    "Web Frameworks": [
+      { name: "Bootstrap", versions: ["5.1.3", "4.6.0", "3.4.1"] },
+      { name: "Tailwind CSS", versions: ["2.2.16", "2.0.4", "3.0.0"] },
+      { name: "Material UI", versions: ["4.12.3", "5.0.0", "4.11.4"] },
+      { name: "Bulma", versions: ["0.9.3", "0.9.2", "0.9.1"] }
+    ],
+    "Databases": [
+      { name: "MySQL", versions: ["8.0.26", "5.7.35", "5.6.51"] },
+      { name: "PostgreSQL", versions: ["14.0", "13.4", "12.8"] },
+      { name: "MongoDB", versions: ["5.0.3", "4.4.9", "4.2.15"] },
+      { name: "MariaDB", versions: ["10.6.4", "10.5.12", "10.4.21"] }
+    ],
+    "Payment Processors": [
+      { name: "Stripe", versions: [] },
+      { name: "PayPal", versions: [] },
+      { name: "Square", versions: [] },
+      { name: "Braintree", versions: [] }
+    ],
+    "CI/CD": [
+      { name: "Jenkins", versions: ["2.303.1", "2.289.3", "2.277.4"] },
+      { name: "GitHub Actions", versions: [] },
+      { name: "CircleCI", versions: [] },
+      { name: "TravisCI", versions: [] }
+    ],
+    "Hosting": [
+      { name: "AWS", versions: [] },
+      { name: "GCP", versions: [] },
+      { name: "Azure", versions: [] },
+      { name: "DigitalOcean", versions: [] },
+      { name: "Heroku", versions: [] }
+    ]
+  };
+  
+  // Determine number of technologies to detect (5-15)
+  const numTechnologies = Math.floor(Math.random() * 10) + 5;
+  
+  // Build a list of technologies based on URL patterns or randomly
+  let detectedTechnologies: { name: string, category: string, version?: string, confidence: number }[] = [];
+  
+  // Add some technologies based on the hostname patterns (for more realistic results)
+  if (hostname.includes("wordpress") || hostname.includes("wp")) {
+    const wpVersions = techByCategory["CMS"].find(t => t.name === "WordPress")?.versions || [];
+    detectedTechnologies.push({
+      name: "WordPress",
+      category: "CMS",
+      version: randomChoice(wpVersions),
+      confidence: Math.floor(Math.random() * 20) + 80 // 80-100%
+    });
+    
+    detectedTechnologies.push({
+      name: "PHP",
+      category: "Programming Languages",
+      version: randomChoice(["7.4.3", "8.0.0", "5.6.40"]),
+      confidence: Math.floor(Math.random() * 30) + 70 // 70-100%
+    });
+  } else if (hostname.includes("shopify")) {
+    detectedTechnologies.push({
+      name: "Shopify",
+      category: "CMS",
+      confidence: Math.floor(Math.random() * 10) + 90 // 90-100%
+    });
+  } else if (hostname.includes("wix")) {
+    detectedTechnologies.push({
+      name: "Wix",
+      category: "CMS",
+      confidence: Math.floor(Math.random() * 10) + 90 // 90-100%
+    });
+  }
+  
+  // Randomly select categories and technologies
+  const selectedCategories = shuffle(categories).slice(0, Math.min(categories.length, numTechnologies));
+  
+  for (const category of selectedCategories) {
+    if (detectedTechnologies.length >= numTechnologies) break;
+    
+    // Skip if we already detected technology in this category
+    if (detectedTechnologies.some(t => t.category === category)) continue;
+    
+    const availableTechs = techByCategory[category] || [];
+    if (availableTechs.length === 0) continue;
+    
+    const tech = randomChoice(availableTechs);
+    const version = tech.versions.length > 0 ? randomChoice(tech.versions) : undefined;
+    
+    detectedTechnologies.push({
+      name: tech.name,
+      category,
+      version,
+      confidence: Math.floor(Math.random() * 40) + 60 // 60-100%
+    });
+  }
+  
+  // Ensure we have jQuery if we have any JavaScript frameworks
+  if (detectedTechnologies.some(t => t.category === "JavaScript Frameworks") && 
+      !detectedTechnologies.some(t => t.name === "jQuery")) {
+    const jQueryVersions = techByCategory["JavaScript Libraries"].find(t => t.name === "jQuery")?.versions || [];
+    
+    detectedTechnologies.push({
+      name: "jQuery", 
+      category: "JavaScript Libraries",
+      version: randomChoice(jQueryVersions),
+      confidence: Math.floor(Math.random() * 30) + 70 // 70-100%
+    });
+  }
+  
+  // If we don't have enough technologies, add some common ones
+  while (detectedTechnologies.length < numTechnologies) {
+    const category = randomChoice(categories);
+    const availableTechs = techByCategory[category] || [];
+    if (availableTechs.length === 0) continue;
+    
+    const tech = randomChoice(availableTechs);
+    
+    // Skip if already detected
+    if (detectedTechnologies.some(t => t.name === tech.name)) continue;
+    
+    const version = tech.versions.length > 0 ? randomChoice(tech.versions) : undefined;
+    
+    detectedTechnologies.push({
+      name: tech.name,
+      category,
+      version,
+      confidence: Math.floor(Math.random() * 50) + 50 // 50-100%
+    });
+  }
+  
+  // Sort by confidence (highest first)
+  detectedTechnologies.sort((a, b) => b.confidence - a.confidence);
+  
+  // Convert to final result format with icons
+  const result = detectedTechnologies.map(tech => ({
+    ...tech,
+    icon: `/icons/${tech.name.toLowerCase().replace(/\s+/g, '-')}.svg`
+  }));
+  
+  return result;
 }

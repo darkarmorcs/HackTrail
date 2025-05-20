@@ -12,6 +12,9 @@ import ParameterDiscovery from "@/pages/parameter-discovery";
 import VulnerabilityScanner from "@/pages/vulnerability-scanner";
 import ScanHistory from "@/pages/scan-history";
 import ScanResults from "@/pages/scan-results/[id]";
+import PortScanner from "@/pages/port-scanner";
+import TechDetector from "@/pages/tech-detector";
+import ContentDiscovery from "@/pages/content-discovery";
 
 function Router() {
   return (
@@ -29,25 +32,10 @@ function Router() {
         <Route path="/parameter-discovery" component={ParameterDiscovery} />
         <Route path="/vulnerability-scanner" component={VulnerabilityScanner} />
         
-        {/* Placeholder routes */}
-        <Route path="/port-scanner">
-          <div className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Port Scanner</h2>
-            <p className="text-slate-400">This feature is coming soon!</p>
-          </div>
-        </Route>
-        <Route path="/tech-detector">
-          <div className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Technology Detector</h2>
-            <p className="text-slate-400">This feature is coming soon!</p>
-          </div>
-        </Route>
-        <Route path="/content-discovery">
-          <div className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Content Discovery</h2>
-            <p className="text-slate-400">This feature is coming soon!</p>
-          </div>
-        </Route>
+        {/* Additional Tools */}
+        <Route path="/port-scanner" component={PortScanner} />
+        <Route path="/tech-detector" component={TechDetector} />
+        <Route path="/content-discovery" component={ContentDiscovery} />
         <Route path="/reports">
           <div className="p-8 text-center">
             <h2 className="text-2xl font-bold mb-4">Report Generator</h2>
