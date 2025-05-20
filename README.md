@@ -20,12 +20,6 @@ A comprehensive security testing application with subdomain enumeration, paramet
 - **Form Handling**: React Hook Form with Zod validation
 - **Storage**: In-memory storage (configurable for production use)
 
-## Running the Application on Replit
-
-1. Open the project in Replit
-2. The project is pre-configured with the necessary workflows
-3. Click the "Run" button or use the "Start application" workflow
-4. The application will be available at the Replit URL provided
 
 ## Running Locally
 
