@@ -59,7 +59,7 @@ export default function ScanHistory() {
 
   // Handle view scan
   const handleViewScan = (scanId: number) => {
-    navigate(`/scan-results/${scanId}`);
+    setLocation(`/scan-results/${scanId}`);
   };
 
   // Filter scans based on search term and status filter

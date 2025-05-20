@@ -140,7 +140,7 @@ export default function Dashboard() {
 
   // Handle view scan
   const handleViewScan = (scanId: number) => {
-    navigate(`/scan-results/${scanId}`);
+    setLocation(`/scan-results/${scanId}`);
   };
 
   return (
