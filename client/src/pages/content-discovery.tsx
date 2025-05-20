@@ -304,14 +304,26 @@ export default function ContentDiscovery() {
 
                     {watchWordlistType === "custom" && (
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-slate-300">Custom Wordlist File</Label>
+                        <div className="text-sm font-medium text-slate-300">Custom Wordlist File</div>
                         <div className="flex flex-col space-y-2">
-                          <Input 
-                            type="file" 
-                            accept=".txt,.list,.wordlist"
-                            onChange={handleFileChange}
-                            className="bg-slate-900 border-slate-700 text-white file:bg-purple-500 file:text-white file:border-0 file:rounded-md file:px-2 file:py-1"
-                          />
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              type="button"
+                              variant="outline" 
+                              className="bg-slate-900 border-slate-700 text-slate-300 hover:bg-purple-500 hover:text-white cursor-pointer"
+                              onClick={() => document.getElementById('wordlist-upload')?.click()}
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              Choose File
+                            </Button>
+                            <Input 
+                              id="wordlist-upload"
+                              type="file" 
+                              accept=".txt,.list,.wordlist"
+                              onChange={handleFileChange}
+                              className="hidden"
+                            />
+                          </div>
                           {customWordlist && (
                             <p className="text-xs text-slate-400">
                               File: {customWordlist.name} ({Math.round(customWordlist.size/1024)} KB)
