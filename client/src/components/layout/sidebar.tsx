@@ -15,18 +15,17 @@ interface NavItemProps {
 
 function NavItem({ href, icon, children, active }: NavItemProps) {
   return (
-    <Link href={href}>
-      <a
-        className={cn(
-          "flex items-center px-3 py-2 text-sm rounded-md transition-colors",
-          active
-            ? "bg-primary/10 text-primary font-medium"
-            : "text-slate-300 hover:bg-slate-700"
-        )}
-      >
-        {icon}
-        <span>{children}</span>
-      </a>
+    <Link 
+      href={href}
+      className={cn(
+        "flex items-center px-3 py-2 text-sm rounded-md transition-colors",
+        active
+          ? "bg-primary/10 text-primary font-medium"
+          : "text-slate-300 hover:bg-slate-700"
+      )}
+    >
+      {icon}
+      <span className="ml-2">{children}</span>
     </Link>
   );
 }

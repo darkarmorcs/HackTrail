@@ -23,10 +23,11 @@ export function ToolCard({ title, description, icon, path, iconBgColor }: ToolCa
             <h4 className="text-white font-medium">{title}</h4>
             <p className="text-slate-400 text-sm mt-1">{description}</p>
             <div className="mt-4">
-              <Link href={path}>
-                <a className="text-indigo-400 text-sm hover:text-indigo-300">
-                  Launch Tool →
-                </a>
+              <Link 
+                href={path}
+                className="text-indigo-400 text-sm hover:text-indigo-300"
+              >
+                Launch Tool →
               </Link>
             </div>
           </div>
