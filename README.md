@@ -33,8 +33,8 @@ A comprehensive security testing application with subdomain enumeration, paramet
 
 1. Clone the repository:
    ```
-   git clone https://github.com/your-username/bug-bounty-hunting-tool.git
-   cd bug-bounty-hunting-tool
+   git clone https://github.com/your-username/HackTrail.git
+   cd HackTrail
    ```
 
 2. Install dependencies:
@@ -47,7 +47,7 @@ A comprehensive security testing application with subdomain enumeration, paramet
    **PostgreSQL**:
    ```
    # Create a new PostgreSQL database
-   createdb bug_bounty_tool
+   createdb HackTrail
    
    # Set environment variables in .env file
    DATABASE_URL=postgresql://username:password@localhost:5432/bug_bounty_tool
